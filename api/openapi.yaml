@@ -18,8 +18,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateSubscriptionRequest'
-            example:
-              $ref: "#/components/examples/CreateSubs"
+            example: '{"price": 400, "service_name": "Yandex Plus", "start_date": "2025-07-01", "user_id": "60601fee-2bf1-4721-ae6f-7636e79a0cba"}'
       responses:
         '201':
           description: Подписка создана
@@ -98,6 +97,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UpdateSubscriptionRequest'
+            example: ''
       responses:
         '200':
           description: Подписка обновлена
@@ -226,10 +226,3 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-
-  examples:
-    CreateSubs:
-      service_name: "Yandex Plus"
-      price: 400
-      user_id: "60601fee-2bf1-4721-ae6f-7636e79a0cba"
-      start_date: "2025-07-01"

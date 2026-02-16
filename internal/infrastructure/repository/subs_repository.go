@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"log"
+	"os"
 	"time"
 )
 
@@ -21,7 +23,16 @@ type Repository struct {
 }
 
 // NewPostgresPool отдельный конструктор для пула, т.к. он должен быть общим для всех репозиториев
-func NewPostgresPool(ctx context.Context, connString string) (*pgxpool.Pool, error) {
+func NewPostgresPool(ctx context.Context) (*pgxpool.Pool, error) {
+	user := os.Getenv("POSTGRES_USER")
+	pass := os.Getenv("POSTGRES_PASSWORD")
+	db := os.Getenv("POSTGRES_DB")
+	host := os.Getenv("POSTGRES_HOST")
+	port := os.Getenv("POSTGRES_PORT")
+	connString := fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		user, pass, host, port, db,
+	)
 	pool, err := pgxpool.New(ctx, connString)
 	if err != nil {
 		return nil, err
@@ -29,6 +40,8 @@ func NewPostgresPool(ctx context.Context, connString string) (*pgxpool.Pool, err
 	if err = pool.Ping(ctx); err != nil {
 		return nil, fmt.Errorf("DB ping error:  %w", err)
 	}
+
+	log.Println("Postgres pool created.")
 	return pool, nil
 }
 
@@ -54,7 +67,6 @@ func (r *Repository) Create(ctx context.Context, subs entity.Subscription) (id e
 		"user_id":      subs.UserId,
 		"start_date":   time.Time(subs.StartDate), // с кастомным типом даты ошибка при записи
 	}
-	fmt.Println("args ", args)
 	if err = r.pool.QueryRow(ctx, query, args).Scan(&id); err != nil {
 		return 0, fmt.Errorf("Create error: %w", err)
 	}
