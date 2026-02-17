@@ -4,7 +4,7 @@ import (
 	"context"
 	"effective-mobile-project/internal/domain/entity"
 	"effective-mobile-project/internal/transport/http/server"
-	"fmt"
+	"log/slog"
 )
 
 //go:generate mockgen -package task -source=get_task.go -destination=mock_get_task.go
@@ -18,11 +18,13 @@ type UpdateSubsRepository interface {
 
 type UpdateSubsUseCase struct {
 	Repository UpdateSubsRepository
+	logger     *slog.Logger
 }
 
-func NewUpdateSubsUseCase(repo UpdateSubsRepository) *UpdateSubsUseCase {
+func NewUpdateSubsUseCase(repo UpdateSubsRepository, logger *slog.Logger) *UpdateSubsUseCase {
 	return &UpdateSubsUseCase{
 		Repository: repo,
+		logger:     logger,
 	}
 }
 
@@ -30,7 +32,7 @@ func NewUpdateSubsUseCase(repo UpdateSubsRepository) *UpdateSubsUseCase {
 func (s *UpdateSubsUseCase) UpdateSubs(ctx context.Context, subsChange entity.Subscription) (subs entity.Subscription, err error) {
 	subs, err = s.Repository.Get(ctx, subsChange.Id)
 	if err != nil {
-		return entity.Subscription{}, fmt.Errorf("TaskService.GetTask: %w", err)
+		return entity.Subscription{}, err
 	}
 
 	if subsChange.Price != nil {

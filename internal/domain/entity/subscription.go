@@ -10,6 +10,10 @@ type (
 	ServiceName string
 	Price       *int
 	UserId      uuid.UUID
+	IsDelete    bool
+
+	ServiceNameNil *string
+	UserIdNil      *uuid.UUID
 )
 
 type Subscription struct {
@@ -19,5 +23,5 @@ type Subscription struct {
 	UserId      UserId      `json:"user_id"`
 	StartDate   time.Time   `json:"start_date"`
 	EndDate     *time.Time  `json:"end_date,omitempty"`
-	DeleteDate  *time.Time  `json:"delete_date,omitempty"`
+	IsDelete    IsDelete    `json:"is_delete,omitempty"`
 }

@@ -6,7 +6,7 @@ create table "subscription"
     user_id      uuid               not null,
     start_date   date default now() not null,
     end_date     date,
-    delete_date  date
+    is_delete  boolean default false not null
 );
 
 create index idx_subs_user_id

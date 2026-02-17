@@ -3,15 +3,16 @@ package app
 import (
 	"context"
 	rep "effective-mobile-project/internal/infrastructure/repository"
+	"effective-mobile-project/internal/pkg/logger"
 	"effective-mobile-project/internal/transport/http/server"
 	"effective-mobile-project/internal/transport/http/server/middleware"
 	"effective-mobile-project/internal/usecase"
 	"errors"
+	"fmt"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	mw "github.com/oapi-codegen/nethttp-middleware"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -21,6 +22,7 @@ import (
 
 func Run() {
 	//глобальный контекст для отмены фоновых загрузок при остановке приложения
+	slog := logger.InitLogging()
 	rootCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	defer stop()
 
@@ -28,7 +30,7 @@ func Run() {
 
 	spec, err := server.GetSwagger()
 	if err != nil {
-		log.Printf("Ошибка Swagger: %v", err)
+		slog.Info(fmt.Sprintf("Ошибка Swagger: %v", err))
 		return
 	}
 
@@ -50,14 +52,17 @@ func Run() {
 	ctx := context.Background()
 	pool, err := rep.NewPostgresPool(ctx)
 	if err != nil {
+		slog.Error(fmt.Sprintf("Postgres pool error: %s", err))
 		return
 	}
-	repository := rep.NewRepository(pool) // репозиторий
-	createSubsUseCase := usecase.NewCreateSubsUseCase(repository)
-	updateSubsUseCase := usecase.NewUpdateSubsUseCase(repository)
-	getSubsUseCase := usecase.NewGetTaskUseCase(repository)
-	cancelSubsUseCase := usecase.NewCancelTaskUseCase(repository)
-	srv := server.NewSubsServer(createSubsUseCase, getSubsUseCase, updateSubsUseCase, cancelSubsUseCase)
+	repository := rep.NewRepository(pool, slog) // репозиторий
+	createSubsUseCase := usecase.NewCreateSubsUseCase(repository, slog)
+	updateSubsUseCase := usecase.NewUpdateSubsUseCase(repository, slog)
+	getSubsUseCase := usecase.NewGetSubsUseCase(repository, slog)
+	cancelSubsUseCase := usecase.NewCancelTaskUseCase(repository, slog)
+	getSubsListUseCase := usecase.NewGetSubsListUseCase(repository, slog)
+	getSubsListPriceUseCase := usecase.NewGetSubsListPriceUseCase(repository, slog)
+	srv := server.NewSubsServer(createSubsUseCase, getSubsUseCase, updateSubsUseCase, cancelSubsUseCase, getSubsListUseCase, getSubsListPriceUseCase, slog)
 
 	// Регистрируем все эндпоинты из OpenAPI
 	srvStrict := server.NewStrictHandlerWithOptions(
@@ -77,22 +82,22 @@ func Run() {
 		Handler: r,
 	}
 	go func() {
-		log.Printf("Start server on port 8080")
+		slog.Info("Start server on port 8080")
 		if err := s.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
-			log.Printf("Listen error: %s", err)
+			slog.Error(fmt.Sprintf("Listen error: %s", err))
 		}
 	}()
 
 	//gracefull shutdown
 	<-rootCtx.Done() // ожидание сигнала завершения
-	log.Println("Start gracefull shutdown ...")
+	slog.Info("Start gracefull shutdown ...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := s.Shutdown(ctx); err != nil {
-		log.Fatal("Server Shutdown err:", err)
+		slog.Error(fmt.Sprintf("Server Shutdown err: %s", err))
 	}
-	log.Println("Server exiting.")
+	slog.Info("Server exiting.")
 	pool.Close() // закрываем пул к базе
-	log.Println("Postgres pool closed.")
+	slog.Info("Postgres pool closed.")
 
 }

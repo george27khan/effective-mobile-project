@@ -35,7 +35,7 @@ const (
 type CreateSubscriptionRequest struct {
 	Price       int                `json:"price"`
 	ServiceName string             `json:"service_name"`
-	StartDate   openapi_types.Date `json:"start_date"`
+	StartDate   string             `json:"start_date"`
 	UserId      openapi_types.UUID `json:"user_id"`
 }
 
@@ -51,13 +51,13 @@ type ErrorResponse struct {
 
 // Subscription defines model for Subscription.
 type Subscription struct {
-	DeleteDate  *openapi_types.Date `json:"delete_date"`
-	EndDate     *openapi_types.Date `json:"end_date"`
-	Id          int                 `json:"id"`
-	Price       int                 `json:"price"`
-	ServiceName string              `json:"service_name"`
-	StartDate   openapi_types.Date  `json:"start_date"`
-	UserId      openapi_types.UUID  `json:"user_id"`
+	EndDate     *string            `json:"end_date"`
+	Id          int                `json:"id"`
+	IsDelete    bool               `json:"is_delete"`
+	Price       int                `json:"price"`
+	ServiceName string             `json:"service_name"`
+	StartDate   string             `json:"start_date"`
+	UserId      openapi_types.UUID `json:"user_id"`
 }
 
 // SubscriptionId defines model for SubscriptionId.
@@ -65,15 +65,15 @@ type SubscriptionId struct {
 	Id int `json:"id"`
 }
 
-// SubscriptionList defines model for SubscriptionList.
-type SubscriptionList struct {
-	Items *[]Subscription `json:"items,omitempty"`
+// SubscriptionPrice defines model for SubscriptionPrice.
+type SubscriptionPrice struct {
+	Price int `json:"price"`
 }
 
 // UpdateSubscriptionRequest defines model for UpdateSubscriptionRequest.
 type UpdateSubscriptionRequest struct {
-	EndDate *openapi_types.Date `json:"end_date"`
-	Price   *int                `json:"price"`
+	EndDate *string `json:"end_date"`
+	Price   *int    `json:"price"`
 }
 
 // BadRequest defines model for BadRequest.
@@ -87,9 +87,15 @@ type NotFound = ErrorResponse
 
 // GetSubscriptionListParams defines parameters for GetSubscriptionList.
 type GetSubscriptionListParams struct {
-	UserId *openapi_types.UUID `form:"user_id,omitempty" json:"user_id,omitempty"`
-	Limit  *int                `form:"limit,omitempty" json:"limit,omitempty"`
-	Offset *int                `form:"offset,omitempty" json:"offset,omitempty"`
+	UserId openapi_types.UUID `form:"user_id" json:"user_id"`
+	Limit  int                `form:"limit" json:"limit"`
+	Offset *int               `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
+// GetSubscriptionPriceParams defines parameters for GetSubscriptionPrice.
+type GetSubscriptionPriceParams struct {
+	UserId      *openapi_types.UUID `form:"user_id,omitempty" json:"user_id,omitempty"`
+	ServiceName *string             `form:"service_name,omitempty" json:"service_name,omitempty"`
 }
 
 // CreateSubscriptionJSONRequestBody defines body for CreateSubscription for application/json ContentType.
@@ -100,12 +106,15 @@ type UpdateSubscriptionJSONRequestBody = UpdateSubscriptionRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// Получить список подписок
+	// Получить список подписок по юзеру
 	// (GET /subscriptions)
 	GetSubscriptionList(w http.ResponseWriter, r *http.Request, params GetSubscriptionListParams)
 	// Создать подписку
 	// (POST /subscriptions)
 	CreateSubscription(w http.ResponseWriter, r *http.Request)
+	// Подсчет суммарной стоимости всех подписок за выбранный период с фильтрацией по id пользователя и названию подписки
+	// (GET /subscriptions-price)
+	GetSubscriptionPrice(w http.ResponseWriter, r *http.Request, params GetSubscriptionPriceParams)
 	// Отменить подписку
 	// (DELETE /subscriptions/{id})
 	CancelSubscription(w http.ResponseWriter, r *http.Request, id int)
@@ -121,7 +130,7 @@ type ServerInterface interface {
 
 type Unimplemented struct{}
 
-// Получить список подписок
+// Получить список подписок по юзеру
 // (GET /subscriptions)
 func (_ Unimplemented) GetSubscriptionList(w http.ResponseWriter, r *http.Request, params GetSubscriptionListParams) {
 	w.WriteHeader(http.StatusNotImplemented)
@@ -130,6 +139,12 @@ func (_ Unimplemented) GetSubscriptionList(w http.ResponseWriter, r *http.Reques
 // Создать подписку
 // (POST /subscriptions)
 func (_ Unimplemented) CreateSubscription(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Подсчет суммарной стоимости всех подписок за выбранный период с фильтрацией по id пользователя и названию подписки
+// (GET /subscriptions-price)
+func (_ Unimplemented) GetSubscriptionPrice(w http.ResponseWriter, r *http.Request, params GetSubscriptionPriceParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -169,17 +184,31 @@ func (siw *ServerInterfaceWrapper) GetSubscriptionList(w http.ResponseWriter, r 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetSubscriptionListParams
 
-	// ------------- Optional query parameter "user_id" -------------
+	// ------------- Required query parameter "user_id" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "user_id", r.URL.Query(), &params.UserId)
+	if paramValue := r.URL.Query().Get("user_id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "user_id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "user_id", r.URL.Query(), &params.UserId)
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user_id", Err: err})
 		return
 	}
 
-	// ------------- Optional query parameter "limit" -------------
+	// ------------- Required query parameter "limit" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if paramValue := r.URL.Query().Get("limit"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "limit", r.URL.Query(), &params.Limit)
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
 		return
@@ -210,6 +239,42 @@ func (siw *ServerInterfaceWrapper) CreateSubscription(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateSubscription(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// GetSubscriptionPrice operation middleware
+func (siw *ServerInterfaceWrapper) GetSubscriptionPrice(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetSubscriptionPriceParams
+
+	// ------------- Optional query parameter "user_id" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "user_id", r.URL.Query(), &params.UserId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user_id", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "service_name" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "service_name", r.URL.Query(), &params.ServiceName)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "service_name", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSubscriptionPrice(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -417,6 +482,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/subscriptions", wrapper.CreateSubscription)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/subscriptions-price", wrapper.GetSubscriptionPrice)
+	})
+	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/subscriptions/{id}", wrapper.CancelSubscription)
 	})
 	r.Group(func(r chi.Router) {
@@ -443,7 +511,7 @@ type GetSubscriptionListResponseObject interface {
 	VisitGetSubscriptionListResponse(w http.ResponseWriter) error
 }
 
-type GetSubscriptionList200JSONResponse SubscriptionList
+type GetSubscriptionList200JSONResponse []Subscription
 
 func (response GetSubscriptionList200JSONResponse) VisitGetSubscriptionListResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -457,6 +525,15 @@ type GetSubscriptionList400JSONResponse struct{ BadRequestJSONResponse }
 func (response GetSubscriptionList400JSONResponse) VisitGetSubscriptionListResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetSubscriptionList404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetSubscriptionList404JSONResponse) VisitGetSubscriptionListResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -503,6 +580,52 @@ type CreateSubscription500JSONResponse struct {
 }
 
 func (response CreateSubscription500JSONResponse) VisitCreateSubscriptionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetSubscriptionPriceRequestObject struct {
+	Params GetSubscriptionPriceParams
+}
+
+type GetSubscriptionPriceResponseObject interface {
+	VisitGetSubscriptionPriceResponse(w http.ResponseWriter) error
+}
+
+type GetSubscriptionPrice200JSONResponse SubscriptionPrice
+
+func (response GetSubscriptionPrice200JSONResponse) VisitGetSubscriptionPriceResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetSubscriptionPrice400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetSubscriptionPrice400JSONResponse) VisitGetSubscriptionPriceResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetSubscriptionPrice404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetSubscriptionPrice404JSONResponse) VisitGetSubscriptionPriceResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetSubscriptionPrice500JSONResponse struct {
+	InternalServerErrorJSONResponse
+}
+
+func (response GetSubscriptionPrice500JSONResponse) VisitGetSubscriptionPriceResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(500)
 
@@ -609,6 +732,15 @@ func (response UpdateSubscription200JSONResponse) VisitUpdateSubscriptionRespons
 	return json.NewEncoder(w).Encode(response)
 }
 
+type UpdateSubscription400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateSubscription400JSONResponse) VisitUpdateSubscriptionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type UpdateSubscription404JSONResponse struct{ NotFoundJSONResponse }
 
 func (response UpdateSubscription404JSONResponse) VisitUpdateSubscriptionResponse(w http.ResponseWriter) error {
@@ -631,12 +763,15 @@ func (response UpdateSubscription500JSONResponse) VisitUpdateSubscriptionRespons
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
-	// Получить список подписок
+	// Получить список подписок по юзеру
 	// (GET /subscriptions)
 	GetSubscriptionList(ctx context.Context, request GetSubscriptionListRequestObject) (GetSubscriptionListResponseObject, error)
 	// Создать подписку
 	// (POST /subscriptions)
 	CreateSubscription(ctx context.Context, request CreateSubscriptionRequestObject) (CreateSubscriptionResponseObject, error)
+	// Подсчет суммарной стоимости всех подписок за выбранный период с фильтрацией по id пользователя и названию подписки
+	// (GET /subscriptions-price)
+	GetSubscriptionPrice(ctx context.Context, request GetSubscriptionPriceRequestObject) (GetSubscriptionPriceResponseObject, error)
 	// Отменить подписку
 	// (DELETE /subscriptions/{id})
 	CancelSubscription(ctx context.Context, request CancelSubscriptionRequestObject) (CancelSubscriptionResponseObject, error)
@@ -734,6 +869,32 @@ func (sh *strictHandler) CreateSubscription(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+// GetSubscriptionPrice operation middleware
+func (sh *strictHandler) GetSubscriptionPrice(w http.ResponseWriter, r *http.Request, params GetSubscriptionPriceParams) {
+	var request GetSubscriptionPriceRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetSubscriptionPrice(ctx, request.(GetSubscriptionPriceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSubscriptionPrice")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSubscriptionPriceResponseObject); ok {
+		if err := validResponse.VisitGetSubscriptionPriceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // CancelSubscription operation middleware
 func (sh *strictHandler) CancelSubscription(w http.ResponseWriter, r *http.Request, id int) {
 	var request CancelSubscriptionRequestObject
@@ -822,28 +983,31 @@ func (sh *strictHandler) UpdateSubscription(w http.ResponseWriter, r *http.Reque
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
