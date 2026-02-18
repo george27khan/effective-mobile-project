@@ -1,0 +1,10 @@
+FROM golang:1.24.3-alpine
+
+RUN apk add --no-cache git
+
+RUN go install github.com/jackc/tern/v2@latest
+
+WORKDIR /migrations
+
+COPY ./migrations ./migrations
+

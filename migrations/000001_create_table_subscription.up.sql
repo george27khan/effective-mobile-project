@@ -6,11 +6,12 @@ create table "subscription"
     user_id      uuid               not null,
     start_date   date default now() not null,
     end_date     date,
-    is_delete  boolean default false not null
+    is_delete    boolean default false not null
 );
 
-create index idx_subs_user_id
-    on subscription (user_id);
-
 create unique index idx_subs_service_name_user_id_uindex
-    on subscription (service_name, user_id);
+    on subscription (user_id, service_name);
+
+---- create above / drop below ----
+
+drop table "subscription";
