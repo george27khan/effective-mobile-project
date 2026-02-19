@@ -7,8 +7,6 @@ import (
 	"log/slog"
 )
 
-//go:generate mockgen -package task -source=create_subscription.go -destination=mock_create_subscription.go
-
 var _ server.CreateSubsUseCase = (*CreateSubsUseCase)(nil)
 
 type CreateSubsRepository interface {

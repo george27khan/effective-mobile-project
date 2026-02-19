@@ -7,8 +7,6 @@ import (
 	"log/slog"
 )
 
-//go:generate mockgen -package task -source=get_task.go -destination=mock_get_task.go
-
 var _ server.CancelSubsUseCase = (*CancelSubsUseCase)(nil)
 
 type CancelSubsRepository interface {

@@ -12,8 +12,6 @@ import (
 	"time"
 )
 
-//go:generate mockgen -package server -source=task_server.go -destination=mock_task_server.go
-
 const StartDateFormat = "01-2006"
 
 var _ StrictServerInterface = (*SubsServer)(nil)
