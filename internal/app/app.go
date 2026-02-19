@@ -99,5 +99,4 @@ func Run() {
 	slog.Info("Server exiting.")
 	pool.Close() // закрываем пул к базе
 	slog.Info("Postgres pool closed.")
-
 }

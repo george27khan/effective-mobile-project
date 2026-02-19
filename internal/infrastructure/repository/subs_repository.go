@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log/slog"
+	"os"
 )
 
 var (
@@ -29,16 +30,16 @@ type Repository struct {
 
 // NewPostgresPool отдельный конструктор для пула, т.к. он должен быть общим для всех репозиториев
 func NewPostgresPool(ctx context.Context) (*pgxpool.Pool, error) {
-	//user := os.Getenv("POSTGRES_USER")
-	//pass := os.Getenv("POSTGRES_PASSWORD")
-	//db := os.Getenv("POSTGRES_DB")
-	//host := os.Getenv("POSTGRES_HOST")
-	//port := os.Getenv("POSTGRES_PORT")
-	user := "postgres"
-	pass := "postgres"
-	db := "postgres"
-	host := "localhost"
-	port := "5432"
+	user := os.Getenv("POSTGRES_USER")
+	pass := os.Getenv("POSTGRES_PASSWORD")
+	db := os.Getenv("POSTGRES_DB")
+	host := os.Getenv("POSTGRES_HOST")
+	port := os.Getenv("POSTGRES_PORT")
+	//user := "postgres"
+	//pass := "postgres"
+	//db := "postgres"
+	//host := "localhost"
+	//port := "5432"
 	connString := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		user, pass, host, port, db,

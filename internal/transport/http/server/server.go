@@ -214,7 +214,7 @@ func (s *SubsServer) GetSubscriptionPrice(ctx context.Context, request GetSubscr
 		s.logger.ErrorContext(logger.ErrorCtx(ctx, ErrBadQueryParam), ErrBadQueryParam.Error())
 		return GetSubscriptionPrice400JSONResponse{resp400("GetSubscriptionPrice", ErrBadQueryParam)}, nil
 	}
-	subsListPrice, err := s.GetSubsListPriceUseCase.GetSubsListPrice(ctx, entity.UserIdNil(request.Params.UserId), entity.ServiceNameNil(request.Params.ServiceName))
+	subsListPrice, err := s.GetSubsListPriceUseCase.GetSubsListPrice(ctx, request.Params.UserId, request.Params.ServiceName)
 	if err != nil {
 		if errors.Is(err, errRep.ErrSubsNotFound) {
 			s.logger.ErrorContext(logger.ErrorCtx(ctx, err), err.Error())

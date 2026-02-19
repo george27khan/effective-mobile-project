@@ -46,7 +46,7 @@ FROM (
          FROM generate_series(1,50)
      ) u
          CROSS JOIN LATERAL
-    generate_series(1, (trunc(random()*10)+1)::int)
+    generate_series(1, 500::int)
 
 ON CONFLICT (user_id, service_name) DO NOTHING;
 

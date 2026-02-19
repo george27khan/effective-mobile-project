@@ -154,25 +154,6 @@ func ShortStack(skip int) []string {
 	return stack
 }
 
-//func WithLogUserID(ctx context.Context, userID int) context.Context {
-//	if c, ok := ctx.Value(key).(logCtx); ok {
-//		c.UserID = userID
-//		return context.WithValue(ctx, key, c)
-//	}
-//	return context.WithValue(ctx, key, logCtx{UserID: userID})
-//}
-//
-//func WithLogPhone(ctx context.Context, phone string) context.Context {
-//	if len(phone) > 4 {
-//		phone = strings.Repeat("*", len(phone)-4) + phone[len(phone)-4:]
-//	}
-//	if c, ok := ctx.Value(key).(logCtx); ok {
-//		c.Phone = phone
-//		return context.WithValue(ctx, key, c)
-//	}
-//	return context.WithValue(ctx, key, logCtx{Phone: phone})
-//}
-
 // -----------------------------------------------
 
 type errorWithLogCtx struct {

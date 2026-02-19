@@ -4,7 +4,7 @@ services:
   app:
     container_name: api
     build:
-      dockerfile: docker/Dockerfile
+      dockerfile: docker/app/Dockerfile
     ports:
       - "8080:8080"
     environment:
@@ -45,7 +45,7 @@ services:
   migrate:
     build:
       context: .
-      dockerfile: docker/Dockerfile.migrate
+      dockerfile: docker/migrations/Dockerfile.migrate
     depends_on:
       postgres_db:
         condition: service_healthy
